@@ -15,7 +15,7 @@ var client *storage.Client
 var bucket *storage.BucketHandle
 
 var notFoundFile = ""
-var defaultFile = ""
+var defaultFile = "index.html"
 
 func init() {
 	c, err := storage.NewClient(context.Background())
@@ -24,9 +24,11 @@ func init() {
 	}
 	client = c
 	bucket = client.Bucket(os.Getenv("BGCS_BUCKET"))
-	notFoundFile = os.Getenv("BGCS_NOT_FOUND_FILE")
-	if defaultFile = os.Getenv("BGCS_DEFAULT_FILE"); defaultFile == "" {
-		defaultFile = "index.html"
+	if f := os.Getenv("BGCS_NOT_FOUND_FILE"); f != "" {
+		notFoundFile = f
+	}
+	if f := os.Getenv("BGCS_DEFAULT_FILE"); f != "" {
+		defaultFile = f
 	}
 }
 
@@ -35,11 +37,18 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path[1:]
-	if len(path) == 0 || path[len(path)-1] == '/' || filepath.Ext(path) == "" {
-		path += "index.html"
+func modifyPath(path string) string {
+	if filepath.Ext(path) == "" {
+		path += "/"
 	}
+	if len(path) == 0 || path[len(path)-1] == '/' {
+		path += defaultFile
+	}
+	return path
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	path := modifyPath(r.URL.Path[1:])
 
 	obj := bucket.Object(path)
 	attrs, err := obj.Attrs(r.Context())
