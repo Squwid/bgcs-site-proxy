@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"cloud.google.com/go/storage"
 )
@@ -36,7 +37,7 @@ func main() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[1:]
-	if len(path) == 0 || path[len(path)-1] == '/' {
+	if len(path) == 0 || path[len(path)-1] == '/' || filepath.Ext(path) == "" {
 		path += "index.html"
 	}
 
