@@ -38,17 +38,17 @@ func main() {
 }
 
 func modifyPath(path string) string {
-	if filepath.Ext(path) == "" {
-		path += "/"
-	}
 	if len(path) == 0 || path[len(path)-1] == '/' {
 		path += defaultFile
+	} else if filepath.Ext(path) == "" {
+		path += "/" + defaultFile
 	}
 	return path
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	path := modifyPath(r.URL.Path[1:])
+	log.Default().Printf("fetching file: %s\n", path)
 
 	obj := bucket.Object(path)
 	attrs, err := obj.Attrs(r.Context())
