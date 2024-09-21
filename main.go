@@ -55,15 +55,26 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == storage.ErrObjectNotExist {
 			if notFoundFile == "" {
+				log.Default().Printf("file %s does not exist. Returning 404.\n",
+					path)
 				http.NotFound(w, r)
+				return
 			}
 			obj = bucket.Object(notFoundFile)
-			//lint:ignore SA4006 Not unused
-			attrs, _ = obj.Attrs(r.Context())
+			log.Default().Printf("file %s does not exist. Fetching %s instead.\n",
+				path, notFoundFile)
+
+			ars, err := obj.Attrs(r.Context())
+			if err != nil {
+				// Fallback file not found. Return 500.
+				http.Error(w, "fallback file not found", http.StatusInternalServerError)
+				return
+			}
+			attrs = ars
 		} else {
 			http.Error(w, fmt.Sprintf("Failed to get object attributes: %v", err), http.StatusInternalServerError)
+			return
 		}
-		return
 	}
 
 	w.Header().Set("Content-Type", attrs.ContentType)
